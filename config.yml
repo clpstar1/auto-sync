@@ -1,0 +1,9 @@
+working_dir: "/home/steffen/Youtube"
+yt_dlp:
+  archive_path: archive.txt
+  playlist_id: PLN9HStrYxE0B2nVpDJkOMyXUa7Arf2kon
+adb_sync:
+  executable: "badb-sync"
+  remote_path: /storage/3230-3331/music
+  include_folders: ["tagged", "untagged"]
+
