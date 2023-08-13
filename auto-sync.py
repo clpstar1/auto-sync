@@ -18,11 +18,11 @@ class YTDLP:
 
     def __init__(self, playlist_id: str, archive_path: str, working_dir: str) -> None:
         self.playlist_id: str = playlist_id
-        self.archive_path: str = archive_path
+        self.archive_path: str = op.join(working_dir, archive_path)
         self.working_dir: str = working_dir
 
         # upgrade / install yt-dlp
-    
+
     def run(self):
         if not op.exists(self.archive_path):
             print(f"path {self.archive_path} does not exist")
@@ -46,6 +46,9 @@ class YTDLP:
         return f"https://www.youtube.com/playlist?list={playlist_id}"
 
     def dry_run(self):
+        print(f"YT-DLP -> playlist_id = {self.playlist_id}")
+        print(f"YT-DLP -> archive_path = {self.archive_path}")
+
         if not op.exists(self.archive_path):
             print(
                 f"YT-DLP [Download] -> {uncommand(self.cmd_create_archive_file())}")
@@ -58,10 +61,15 @@ class YTDLP:
 
 class AdbSync:
 
-    def __init__(self, executable: str, remote_path: str, include_folders: List[str]) -> None:
+    def __init__(self, executable: str,
+                 remote_path: str,
+                 include_folders: List[str],
+                 working_dir: str
+                 ) -> None:
         self.exetuble: str = executable
         self.remote_path: str = remote_path
         self.include_folders: List[str] = include_folders
+        self.working_dir = working_dir
 
     def sync_files_with_phone(self):
         for folder in self.include_folders:
@@ -70,20 +78,15 @@ class AdbSync:
     def cmd_adb_sync(self, folder: str) -> List[str]:
         remote_path = self.remote_path
         executable = self.exetuble
-        return command(f"{executable} {config['working_dir']}/{folder}/{os.path.join(remote_path, folder)}")
+        return command(f"{executable} {op.join(self.working_dir, folder)}/ {os.path.join(remote_path, folder)}")
 
     def dry_run(self):
         for folder in self.include_folders:
             print(f"ADB-SYNC [Copy] -> {uncommand(self.cmd_adb_sync(folder))}")
 
 
-def run(ytdlp: YTDLP, adb_sync: AdbSync, config: Dict):
-    archive_path = config["archive_path"]
-
-
-
 def skip_stage2():
-    return input("Proceed to copy stage ? [y/N]").lower() == "n"
+    return input("Proceed to copy stage ? [y/N]\n").lower() == "n"
 
 
 def ask_user_for_tagging():
@@ -106,7 +109,8 @@ def get_config(path: str = "config.yml"):
         return yaml.safe_load(yaml_config)
 
 
-def dry_run(ytdlp: YTDLP, adb_sync: AdbSync):
+def dry_run(ytdlp: YTDLP, adb_sync: AdbSync, working_dir: str):
+    print(f"working_dir = {working_dir}")
     print("-" * 30)
     print("Stage 1: YT-DLP")
     ytdlp.dry_run()
@@ -152,15 +156,16 @@ if __name__ == "__main__":
     adb_sync = AdbSync(
         get_or_default(lambda: adb_sync_conf['executable'], 'adb-sync'),
         adb_sync_conf['remote_path'],
-        get_or_default(lambda: adb_sync_conf['include_folders'], [])
+        get_or_default(lambda: adb_sync_conf['include_folders'], []),
+        working_dir
     )
 
     os.chdir(working_dir)
 
     if args.dry_run:
-        dry_run(ytdlp, adb_sync)
+        dry_run(ytdlp, adb_sync, working_dir)
     else:
-        ytdlp.synchronize_youtube_playlist()
+        ytdlp.run()
         if skip_stage2():
             exit(0)
         else:
