@@ -33,7 +33,9 @@ class YTDLP:
             subprocess.run(ytdlp.cmd_yt_dlp_download(), check=True)
 
     def cmd_yt_dlp_download(self) -> List[str]:
-        return command(f"yt-dlp -o {config['working_dir']}/%(title)s.%(ext)s --download-archive {self.archive_path} {self.__build_url_from_playlist_id(self.playlist_id)}")
+        out_path = op.join(self.working_dir, "%(titel)s.%(ext)s")
+        playlist_url = self.__build_url_from_playlist_id(self.playlist_id)
+        return command(f"yt-dlp -o {out_path} --download-archive {self.archive_path} {self.__build_url_from_playlist_id(self.playlist_id)}")
 
     def cmd_yt_dlp_install(self) -> List[str]:
         return command("pip install --upgrade yt-dlp")
